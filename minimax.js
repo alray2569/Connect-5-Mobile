@@ -14,7 +14,6 @@ var Move = function (player, posX, posY) {
 	};
 };
 
-
 /// Create a new blank board object
 var Board = function () {
 	"use strict";
@@ -35,6 +34,10 @@ var Board = function () {
 			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]];
 };
 
+var checkWin = function (board) {
+	return NONE;
+};
+
 /// Heuristic returns a score for a boardstate.
 var heuristic = function (board) { "use strict"; return 1; };
 
@@ -51,8 +54,7 @@ var min = function (itersLeft) {
 		else {
 			// recursive case, call to max then find worst board
 			return worstBoard(nextBoards(board, getLegalMoves(HUMAN, board))
-				.map(max(itersLeft - 1)) // run max
-				.reduce(function (a, b) {return a.concat(b);})); // flatten the array
+				.map(max(itersLeft - 1))); // run max
 		}
 	};
 };
@@ -69,8 +71,7 @@ var max = function (itersLeft) {
 		else {
 			// recursive case, call to min then find worst board
 			return bestBoard(nextBoards(board, getLegalMoves(COMP, board))
-				.map(min(itersLeft - 1))
-				.reduce(function (a, b) {return a.concat(b);}));
+				.map(min(itersLeft - 1)));
 		}
 	};
 };

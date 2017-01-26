@@ -26,7 +26,7 @@ along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
 
 /*jshint -W097*/
 /*jslint nomen: true, white: true */
-/*global PS */
+/*global PS: false, NONE: false, HUMAN: false, COMP: false, isLegal: false, Move: false, Board: false, makeMove: false, checkWin: false, max: false, getMoveFromDifferingBoards: false*/
 
 // This is a template for creating new Perlenspiel games
 
@@ -39,6 +39,9 @@ along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
 // [system] = an object containing engine and platform information; see documentation for details
 // [options] = an object with optional parameters; see documentation for details
 
+var playerTurn = HUMAN;
+var board = new Board();
+
 PS.init = function( system, options ) {
 	// Use PS.gridSize( x, y ) to set the grid to
 	// the initial dimensions you want (32 x 32 maximum)
@@ -46,8 +49,10 @@ PS.init = function( system, options ) {
 	// Otherwise you will get the default 8x8 grid
 
 	PS.gridSize( 15, 15 );
-
-	// Add any other initialization code you need here
+	// Set the borders
+	PS.color(PS.ALL, PS.ALL, 0xff0000);
+	PS.gridColor(0xcccccc);
+	PS.borderColor(PS.ALL, PS.ALL, 0x000000);
 };
 
 // PS.touch ( x, y, data, options )
@@ -61,8 +66,70 @@ PS.init = function( system, options ) {
 PS.touch = function( x, y, data, options ) {
 	// Uncomment the following line to inspect parameters
 	// PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
+	var move;
+	
+	switch (playerTurn) {
+		case HUMAN:
+			move = new Move(HUMAN, x, y);
+			if (isLegal(move)) {
+				board = makeMove(board)(move); // make the move
+				drawNewPiece(move);
+				if (handleWinnerIfNecessary(board)) {return;}
+			}
+			PS.statusText("AI is thinking. Please wait...");
+			playerTurn = COMP;
+			
+			board = max(2)(board);
+			if (board === null) {PS.debug("Board is Null!");}
+			drawBoard(board);
+			if (handleWinnerIfNecessary(board)) {return;}
+			
+			playerTurn = HUMAN;
+			PS.statusTextText("Your turn!");
+			break;
+		case COMP:
+			return;
+		default:
+			return;
+	}
+	
+};
 
-	// Add code here for mouse clicks/touches over a bead
+var handleWinnerIfNecessary = function (board) {
+	switch (checkWin(board)) {
+		case NONE:
+			return false;
+		case HUMAN:
+			PS.statusTextText("Congratulations! You win!");
+			return true;
+		case COMP:
+			PS.statusTextText("Sorry! You lose.");
+			return true;
+	}
+};
+
+var drawBoard = function (board) {
+	var x, y;
+	
+	for (x = 0; x < 15; ++x) {
+		for (y = 0; y < 15; ++y) {
+			switch (board[x][y]) {
+				case HUMAN:
+					drawNewPiece(new Move(HUMAN, x, y));
+					break;
+				case COMP:
+					drawNewPiece(new Move(COMP, x, y));
+					break;
+				case NONE:
+					PS.glyph(PS.NONE);
+			}
+		}
+	}
+};
+
+var drawNewPiece = function (move) {
+	PS.glyphColor(move.posX, move.posY, move.player === HUMAN ? 0x000000 : 0xfffffff);
+	PS.glyph(move.posX, move.posY, '\u2B24');
 };
 
 // PS.release ( x, y, data, options )
