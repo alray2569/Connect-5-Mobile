@@ -41,6 +41,7 @@ along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
 
 var playerTurn = HUMAN;
 var board = new Board();
+var AIDEPTH = 2;
 
 PS.init = function( system, options ) {
 	// Use PS.gridSize( x, y ) to set the grid to
@@ -71,15 +72,19 @@ PS.touch = function( x, y, data, options ) {
 	switch (playerTurn) {
 		case HUMAN:
 			move = new Move(HUMAN, x, y);
-			if (isLegal(move)) {
+			if (isLegal(board)(move)) {
 				board = makeMove(board)(move); // make the move
 				drawNewPiece(move);
 				if (handleWinnerIfNecessary(board)) {return;}
 			}
+			else {
+				PS.statusText("Illegal move...");
+				return;
+			}
 			PS.statusText("AI is thinking. Please wait...");
 			playerTurn = COMP;
 			
-			board = max(2)(board);
+			board = max(AIDEPTH)(board);
 			if (board === null) {PS.debug("Board is Null!");}
 			drawBoard(board);
 			if (handleWinnerIfNecessary(board)) {return;}

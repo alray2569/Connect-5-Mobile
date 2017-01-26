@@ -35,59 +35,61 @@ var Board = function () {
 };
 
 var checkWin = function (board) {
-	var x, y, i;
-	var winner = NONE;
-	var color, found, foundDL, foundDR;
+	var x, i, q, color, mod;
+	var fb = board.reduce(function (a,b) {return a.concat(b);});
 	
-	//Check for horizontal wins!
-	for (x = 0; x < 11; ++x) {
-		for (y = 0; y < 15; ++y) {
-			color = board[y][x];
-			found = true;
-			for(i=1; i<=4;i++){
-				if(board[y][x+i]!=color){
-					found = false;
+	for (x = 0; x < 225; ++x) {
+		color = fb[x];
+		if (color) {
+			i = q = 0;
+			mod = x % 15;
+			while (true) {
+				if (i === 5)
+					return color;
+				if (fb[x + i] !== color)
+					break;
+				if ((x + i) % 15 !== mod + 1) {
 					break;
 				}
+				++mod;
+				++i;
 			}
-			if(found){
-				return color;
-			}
-		}
-	}
-	//Check for vertical wins!
-	for (x = 0; x < 15; ++x) {
-		for (y = 0; y < 11; ++y) {
-			color = board[y][x];
-			found = true;
-			for(i=1; i<=4;i++){
-				if(board[y+i][x]!=color){
-					found = false;
+			i = q = 0;
+			mod = x % 15 + 1;
+			while (true) {
+				if (i === 5) 
+					return color;
+				if (fb[x + q] !== color)
+					break;
+				if ((x + q) % 15 !== mod - 1) {
 					break;
 				}
+				--mod;
+				++i; q += 14;
 			}
-			if(found){
-				return color;
+			i = q = 0;
+			mod = x % 15;
+			while (true) {
+				if (i === 5)
+					return color;
+				if (fb[x + q] !== color)
+					break;
+				++i; q += 15;
 			}
-		}
-	}
-	//Check for diagonal wins!
-	for (x = 0; x < 11; ++x) {
-		for (y = 0; y < 11; ++y) {
-			color = board[y][x];
-			foundDR = true;//found from top left to bottom right
-			foundDL = true;//found from top right to bottom left
-			for(i=1; i<=4;i++){
-				if(board[y+i][x+1]!=color){
-					foundDR = false;
+			i = q = 0;
+			mod = x % 15 - 1;
+			while (true) {
+				if (i === 5)
+					return color;
+				if (fb[x + q] !== color)
+					break;
+				if ((x + q) % 15 !== mod + 1) {
+					break;
 				}
-				if(board[y+5-i][x+i]!=color){
-					
-				}
+				++mod;
+				++i; q += 16;
 			}
-			if(foundDR||foundDL){
-				return color;
-			}
+			
 		}
 	}
 };
@@ -125,7 +127,7 @@ var max = function (itersLeft) {
 		}
 		else {
 			// recursive case, call to min then find worst board
-			return nextBoards(board, getLegalMoves(HUMAN, board)).reduce(function (board1, board2) {
+			return nextBoards(board, getLegalMoves(COMP, board)).reduce(function (board1, board2) {
 				return betterBoard(min(itersLeft - 1)(board1), min(itersLeft - 1)(board2)) === board1 ? board1 : board2;
 			});
 		}
