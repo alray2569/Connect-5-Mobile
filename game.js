@@ -85,7 +85,7 @@ PS.touch = function( x, y, data, options ) {
 			if (handleWinnerIfNecessary(board)) {return;}
 			
 			playerTurn = HUMAN;
-			PS.statusTextText("Your turn!");
+			PS.statusText("Your turn!");
 			break;
 		case COMP:
 			return;
@@ -100,10 +100,10 @@ var handleWinnerIfNecessary = function (board) {
 		case NONE:
 			return false;
 		case HUMAN:
-			PS.statusTextText("Congratulations! You win!");
+			PS.statusText("Congratulations! You win!");
 			return true;
 		case COMP:
-			PS.statusTextText("Sorry! You lose.");
+			PS.statusText("Sorry! You lose.");
 			return true;
 	}
 };
@@ -121,7 +121,7 @@ var drawBoard = function (board) {
 					drawNewPiece(new Move(COMP, x, y));
 					break;
 				case NONE:
-					PS.glyph(PS.NONE);
+					PS.glyph(x, y, PS.NONE);
 			}
 		}
 	}

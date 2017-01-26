@@ -35,7 +35,61 @@ var Board = function () {
 };
 
 var checkWin = function (board) {
-	return NONE;
+	var x, y, i;
+	var winner = NONE;
+	var color, found, foundDL, foundDR;
+	
+	//Check for horizontal wins!
+	for (x = 0; x < 11; ++x) {
+		for (y = 0; y < 15; ++y) {
+			color = board[y][x];
+			found = true;
+			for(i=1; i<=4;i++){
+				if(board[y][x+i]!=color){
+					found = false;
+					break;
+				}
+			}
+			if(found){
+				return color;
+			}
+		}
+	}
+	//Check for vertical wins!
+	for (x = 0; x < 15; ++x) {
+		for (y = 0; y < 11; ++y) {
+			color = board[y][x];
+			found = true;
+			for(i=1; i<=4;i++){
+				if(board[y+i][x]!=color){
+					found = false;
+					break;
+				}
+			}
+			if(found){
+				return color;
+			}
+		}
+	}
+	//Check for diagonal wins!
+	for (x = 0; x < 11; ++x) {
+		for (y = 0; y < 11; ++y) {
+			color = board[y][x];
+			foundDR = true;//found from top left to bottom right
+			foundDL = true;//found from top right to bottom left
+			for(i=1; i<=4;i++){
+				if(board[y+i][x+1]!=color){
+					foundDR = false;
+				}
+				if(board[y+5-i][x+i]!=color){
+					
+				}
+			}
+			if(foundDR||foundDL){
+				return color;
+			}
+		}
+	}
 };
 
 /// Heuristic returns a score for a boardstate.
@@ -49,12 +103,13 @@ var min = function (itersLeft) {
 	return function (board) { // for currying!
 		if (itersLeft === 0) {
 			// final case: find the worst board
-			return worstBoard(nextBoards(board, getLegalMoves(HUMAN, board)));
+			return board;
 		}
 		else {
 			// recursive case, call to max then find worst board
-			return worstBoard(nextBoards(board, getLegalMoves(HUMAN, board))
-				.map(max(itersLeft - 1))); // run max
+			return nextBoards(board, getLegalMoves(HUMAN, board)).reduce(function (board1, board2) {
+				return worseBoard(max(itersLeft - 1)(board1), max(itersLeft - 1)(board2)) === board1 ? board1 : board2;
+			});
 		}
 	};
 };
@@ -66,12 +121,13 @@ var max = function (itersLeft) {
 	return function (board) { // for currying!
 		if (itersLeft === 0) {
 			// final case
-			return bestBoard(nextBoards(board, getLegalMoves(COMP, board)));
+			return board;
 		}
 		else {
 			// recursive case, call to min then find worst board
-			return bestBoard(nextBoards(board, getLegalMoves(COMP, board))
-				.map(min(itersLeft - 1)));
+			return nextBoards(board, getLegalMoves(HUMAN, board)).reduce(function (board1, board2) {
+				return betterBoard(min(itersLeft - 1)(board1), min(itersLeft - 1)(board2)) === board1 ? board1 : board2;
+			});
 		}
 	};
 };
@@ -114,7 +170,14 @@ var nextBoards = function (board, legalMoves) {
 var makeMove = function (board) {
 	"use strict";
 	return function (move) { // for currying!
-		var newboard = board.slice(0); // copy the board
+		var newboard = new Board(), x, y; // copy the board deeply
+		
+		for (x = 0; x < 15; ++x) {
+			for (y = 0; y < 15; ++y) {
+				newboard[x][y] = board[x][y];
+			}
+		}
+		
 		newboard[move.posX][move.posY] = move.player; // update new board
 		return newboard;
 	};
