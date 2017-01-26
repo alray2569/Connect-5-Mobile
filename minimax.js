@@ -36,62 +36,71 @@ var Board = function () {
 
 var checkWin = function (board) {
 	var x, i, q, color, mod;
+	// flatten the array so we only need to do a single for loop.
 	var fb = board.reduce(function (a,b) {return a.concat(b);});
 	
+	// loop over all positions
 	for (x = 0; x < 225; ++x) {
 		color = fb[x];
-		if (color) {
+		
+		if (color) { // NONE is falsy, so won't enter loop with no piece;
+			
+			// Check horizontal - win
 			i = q = 0;
-			mod = x % 15;
-			while (true) {
-				if (i === 5)
-					return color;
-				if (fb[x + i] !== color)
-					break;
-				if ((x + i) % 15 !== mod + 1) {
-					break;
+			if (x % 15 <= 10) {// horizontal can't start in last four columns.
+				while (true) {
+					// increment i
+					++i;
+					
+					// check if five in a row
+					if (i === 5)
+						return color;
+						
+					// check if not same color, in which case stop looking here
+					if (fb[x + i] !== color)
+						break;
 				}
-				++mod;
-				++i;
 			}
+			
+			// Check diagonal / win
 			i = q = 0;
-			mod = x % 15 + 1;
-			while (true) {
-				if (i === 5) 
-					return color;
-				if (fb[x + q] !== color)
-					break;
-				if ((x + q) % 15 !== mod - 1) {
-					break;
+			if (x % 15 >= 4) { // left diagonal can't start in first four columns
+				while (true) {
+					++i; q += 14;
+					if (i === 5) 
+						return color;
+					if (fb[x + q] !== color)
+						break;
 				}
-				--mod;
-				++i; q += 14;
 			}
+			
+			// Check vertical | win
 			i = q = 0;
-			mod = x % 15;
 			while (true) {
-				if (i === 5)
-					return color;
-				if (fb[x + q] !== color)
-					break;
 				++i; q += 15;
-			}
-			i = q = 0;
-			mod = x % 15 - 1;
-			while (true) {
 				if (i === 5)
 					return color;
 				if (fb[x + q] !== color)
 					break;
-				if ((x + q) % 15 !== mod + 1) {
-					break;
+			}
+			
+			// Check diagonal \ win
+			i = q = 0;
+			if (x % 15 <= 10) {// right diagonal can't start in last four columns
+				while (true) {
+					++i; q += 16;
+					if (i === 5)
+						return color;
+					if (fb[x + q] !== color)
+						break;
 				}
-				++mod;
-				++i; q += 16;
 			}
 			
 		}
 	}
+	
+	// no winner yet, return NONE
+	return NONE;
 };
 
 /// Heuristic returns a score for a boardstate.
@@ -188,7 +197,7 @@ var makeMove = function (board) {
 /// Returns all moves that are legal for player turn and given board.
 var getLegalMoves = function (player, board) {
 	"use strict";
-	return getAllMoves(player).filter(isLegal(board));
+	return getAllMoves(player).filter(shouldKeep(board)).filter(isLegal(board));
 };
 
 /// Gets all possible moves for player turn
@@ -212,5 +221,21 @@ var isLegal = function (board) {
 	"use strict";
 	return function (move) {
 		return board[move.posX][move.posY] === NONE;
+	};
+};
+
+var shouldKeep = function (board) {
+	"use strict";
+	return function (move) {
+		var x, y;
+		for (x = move.posX - 2; x <= move.posX + 2; ++x) {
+			if (x < 0 || x >= 15) continue; // avoid bad values
+			for (y = move.posY - 2; y <= move.posY + 2; ++y) {
+				if (board[x][y]) {
+					return true;
+				}
+			}
+		}
+		return false;
 	};
 };
