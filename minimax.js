@@ -19,7 +19,7 @@ var Move = function (player, posX, posY) {
 var Board = function () {
 	"use strict";
 	return [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], // you've got to be kidding
-		    [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], // me, javascript. is there
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], // me, javascript. is there
 			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], // really no better way to
 			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], // do this than to write
 			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], // 15^2 zeroes?
@@ -39,7 +39,7 @@ var Board = function () {
 var heuristic = function (board) { "use strict"; return 1; };
 
 
-/// Min's turn
+/// Min's turn: probably don't call directly (leave that to max)
 var min = function (itersLeft) {
 	"use strict";
 	
@@ -57,7 +57,7 @@ var min = function (itersLeft) {
 	};
 };
 
-/// Max's turn
+/// Max's turn: call as max(itersLeft)(board).
 var max = function (itersLeft) {
 	"use strict";
 	
