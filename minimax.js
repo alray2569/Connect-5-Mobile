@@ -129,13 +129,13 @@ var checkWin = function (board) {
 		eif forms 5-in-a-row: OOOOO
 			score += 100000
 			
-	Numbers from http://citeseerx.ist.psu.edu/viewdoc/download;jsessionid=311229C6DFD388D914A04BFD612384D9?doi=10.1.1.677.2553&rep=rep1&type=pdf
+	Numbers based on http://citeseerx.ist.psu.edu/viewdoc/download;jsessionid=311229C6DFD388D914A04BFD612384D9?doi=10.1.1.677.2553&rep=rep1&type=pdf
 		*/
 /// Helper function for determining score
-var linescore = function(width, numblock, delayblocks, superdelay, plusone, plustwo){
+var linepoints = function(width, numblock, delayblocks, superdelay, plusone, plustwo){
 	switch(width){
 		case 5:
-			return 100000;
+			return 1000000;
 		case 4:
 			if(numblock === 2)
 				return 0;//Blocked on both sides, no good
@@ -157,6 +157,9 @@ var linescore = function(width, numblock, delayblocks, superdelay, plusone, plus
 				else if(delayblocks)
 					//XOOO-X
 					return 0;//Will be blocked, no good
+				else
+					//XOOO--
+					return 600;
 			} else if (numblock === 0){
 				if(plusone === 2)
 					//O-OOO-O, unstoppable win
@@ -197,6 +200,9 @@ var linescore = function(width, numblock, delayblocks, superdelay, plusone, plus
 				else if(delayblocks)
 					//XOO-X
 					return 0;//Will be blocked, no good
+				else
+					return 100;
+					
 			} else if (numblock === 0){
 				if(plusone === 2){
 					if(plustwo === 2){
@@ -285,153 +291,296 @@ var otherscore = function(val){
 			return 1800;
 		case 5000:
 			return 3000;
-		case 100000:
+		case 1000000:
 			return 10000;
 	}
 };
 
-/// Heuristic returns a score for a boardstate.
-var heuristic = function (board) {
-	//O being AI piece, X being player piece
-	
-	var x, y, a, b, found;
-	var maxscore = 0, maxscore2 = 0;
-	for(x=0;x<15;++x){
-		for(y=0;y<15;++y){
-			if(!board[y][x]){//Unoccupied
-				found = false;
-				/*for(a=-2;a<=2 && !found;++a){//Occupied space within two squares
-					for(b=-2;b<=2 && !found;++b){
-						if((x+a>=0 && x+a<15)&&//not out of bounds
-						  	(y+b>=0 && y+b<15) &&
-						   	board[y+b][x+a]//occupied
-						  	){
-							found = true;//found it
-							break;
-						}
-					}
-				}*/
-				if(!found){
-					continue;//Skip this one
-				} else {
-					var score = 0, score2 = 0;
-					//for each direction (horiz, vert, diag, backdiag):
-					
-					//Center represents the newly added piece
-					var horiz = [HUMAN,HUMAN,HUMAN,HUMAN,HUMAN,HUMAN, COMP,
-								HUMAN,HUMAN,HUMAN,HUMAN,HUMAN,HUMAN];//13 long
-					var vert = [HUMAN,HUMAN,HUMAN,HUMAN,HUMAN,HUMAN, COMP,
-								HUMAN,HUMAN,HUMAN,HUMAN,HUMAN,HUMAN];
-					var slash = [HUMAN,HUMAN,HUMAN,HUMAN,HUMAN,HUMAN, COMP,
-								HUMAN,HUMAN,HUMAN,HUMAN,HUMAN,HUMAN];
-					var bslash = [HUMAN,HUMAN,HUMAN,HUMAN,HUMAN,HUMAN, COMP,
-								HUMAN,HUMAN,HUMAN,HUMAN,HUMAN,HUMAN];
-										
-					//Input data into the arrays
-					
-					a = x; b = 5;//Horizontal left side
-					while(a>0 && b>=0){
-						--a;//move position on board
-						horiz[b] = board[y][a];
-						--b;//move position in array
-					}
-					a = x; b = 7;//Horizontal right side
-					while(a<14 && b<=12){
-						++a;//move position on board
-						horiz[b] = board[y][a];
-						++b;//move position in array
-					}
-					
-					a = y; b = 5;//Vertical top side
-					while(a>0 && b>=0){
-						--a;//move position on board
-						vert[b] = board[a][x];
-						--b;//move position in array
-					}
-					a = y; b = 7;//Vertical bottom side
-					while(a<14 && b<=12){
-						++a;//move position on board
-						vert[b] = board[a][x];
-						++b;//move position in array
-					}
-					
-					a = 0; b = 5;//Slash top right
-					while(y+a>0 && x-a>0 && b>=0){
-						--a;//move position on board
-						vert[b] = board[y+a][x-a];
-						--b;//move position in array
-					}
-					a = 0; b = 7;//Slash bottom left
-					while(y+a<14 && x-a<14 && b<=12){
-						++a;//move position on board
-						vert[b] = board[y+a][x-a];
-						++b;//move position in array
-					}
-					
-					a = 0; b = 5;//BSlash top left
-					while(y+a>0 && x+a>0 && b>=0){
-						--a;//move position on board
-						vert[b] = board[y+a][x+a];
-						--b;//move position in array
-					}
-					a = 0; b = 7;//BSlash bottom right
-					while(y+a<14 && x+a<14 && b<=12){
-						++a;//move position on board
-						vert[b] = board[y+a][x+a];
-						++b;//move position in array
-					}
-					
-					
-					var boundleft = 7, boundright = 7;
-					var len = 0, lenleft = 0, lenright = 0;
-					var blockleft = 0, blockright = 0;//--OX
-					var delayleft = 0, delayright = 0;//--O-X
-					var superleft = 0, superright = 0;//--O--X
-					var plusone = 0, plustwo = 0;
-					
-					//Horizontal first
-					while(boundleft >= 0 && horiz[boundleft - 1] === COMP){
-							boundleft--;
-					}
-					while(boundright <= 12 && horiz[boundright + 1] === COMP){
-							boundright++;
-					}
-					len = boundright - boundleft + 1;
-					if(boundleft > 0){
-						if(horiz[boundleft-1] === HUMAN){
-							blockleft = 1;
-						} else {//EMPTY
-							if(boundleft > 1){
-								if(horiz[boundleft-2] === HUMAN){
-									delayleft = 1;
-								} else if(horiz[boundleft-2] === COMP){
-									a = boundleft-1;
-									while(a >= 0 && horiz[a - 1] === COMP){
-										a--;
-									}
-									//lenleft = 
-								}
-							}
-						}
-					}
-					
-					if(!board[y][x])
-					maxscore += x;
-					
-					//Waste time to see how slow the result will be
-					for (a=0; a<8; ++a)
-						linescore(3, 1, 1, 0, 0, 0);
+
+var otherplayer = function(player){
+	if(player === HUMAN){
+		return COMP;
+	} else if(player === COMP){
+		return HUMAN;
+	} else
+		return NONE;
+};
+
+var line = [0,0,0,0,0,0,0,0,0,0,0,0,0];
+
+
+var linescore = function(player){
+	const other = otherplayer(player);//For abbreviation
+	var boundleft = 6, boundright = 6;
+	var len = 0, lenleft = 0, lenright = 0;
+	var blockleft = 0, blockright = 0;//--OX
+	var delayleft = 0, delayright = 0;//--O-X
+	var superleft = 0, superright = 0;//--O--X
+	var plusone = 0, plustwo = 0;
+
+	while(boundleft > 0 && line[boundleft - 1] === player){
+			boundleft--;//Find the extents of the main string
+	}
+	while(boundright < 12 && line[boundright + 1] === player){
+			boundright++;//Find the extents of the main string
+	}
+	len = boundright - boundleft + 1;
+	if(len >= 5){
+		if(player === COMP)
+			return linescore(len, 0,0,0,0,0);//No need to check any further
+		if(player === HUMAN)
+			return otherplayer(linescore(len, 0,0,0,0,0));
+	}
+	if(boundleft > 0){//Check for pieces to the left of the main string
+		if(line[boundleft-1] === other){
+			blockleft = 1;
+		} else if(boundleft > 1){//EMPTY
+			if(line[boundleft-2] === other){
+				delayleft = 1;
+			} else if(line[boundleft-2] === player){
+				plusone++;
+				a = boundleft-1;
+				while(a > 0 && line[a - 1] === player){
+					a--;
+				}
+				lenleft = boundleft-1 - a;
+				//Pieces form lenleft-in-an-row on the left side: lenleft-OOO---
+			} else if(boundleft > 2) {//EMPTY
+				if(line[boundleft-3] === other){
+					superleft = 1;
+				} else if(line[boundleft-3] === player){
+					plustwo++;
+				}
+			}
+		}
+	}
+	if(boundright < 12){//Check for pieces to the right of the main string
+		if(line[boundright+1] === other){
+			blockright = 1;
+		} else if(boundright < 11){//EMPTY
+			if(line[boundright+2] === other){
+				delayright = 1;
+			} else if(line[boundright+2] === player){
+				plusone++;
+				a = boundright+1;
+				while(a <12 && line[a + 1] === player){
+					a++;
+				}
+				lenright = a - (boundright+1);
+				//Pieces form lenright-in-an-row on the left side: lenright-OOO---
+			} else if(boundright <10) {//EMPTY
+				if(line[boundright+3] === other){
+					superright = 1;
+				} else if(line[boundright+3] === player){
+					plustwo++;
 				}
 			}
 		}
 	}
 	
-	
+	//	PS.debug(len+" "+blockleft+blockright+" "+delayleft+delayright+" "+superleft+superright+" "+plusone+" "+plustwo+";");
+	return linepoints(len, blockleft+blockright, delayleft+delayright,
+					  superleft+superright, plusone, plustwo);
+};
 
+/// Heuristic returns a score for a boardstate.
+var heuristic = function (board) {
+	
+	//return Math.random()*100;
+	
+	//O being AI piece, X being player piece
+	var x, y, a, b;
+	var maxscore = 0, maxscore2 = 0, score = 0, score2 = 0;
+	for(x=0;x<15;++x){
+		for(y=0;y<15;++y){
+			if(!board[y][x]){//Unoccupied
+				score = 0, score2 = 0;
+				//for each direction (horiz, vert, diag, backdiag):
+
+				//Center represents the newly added piece
+				var horiz = [HUMAN,HUMAN,HUMAN,HUMAN,HUMAN,HUMAN, COMP,
+							HUMAN,HUMAN,HUMAN,HUMAN,HUMAN,HUMAN];//13 long
+				var vert = [HUMAN,HUMAN,HUMAN,HUMAN,HUMAN,HUMAN, COMP,
+							HUMAN,HUMAN,HUMAN,HUMAN,HUMAN,HUMAN];
+				var slash = [HUMAN,HUMAN,HUMAN,HUMAN,HUMAN,HUMAN, COMP,
+							HUMAN,HUMAN,HUMAN,HUMAN,HUMAN,HUMAN];
+				var bslash = [HUMAN,HUMAN,HUMAN,HUMAN,HUMAN,HUMAN, COMP,
+							HUMAN,HUMAN,HUMAN,HUMAN,HUMAN,HUMAN];
+
+				//Copy data from board into the arrays
+				
+				a = x; b = 5;//Horizontal left side
+				while(a>0 && b>=0){
+					--a;//move position on board
+					horiz[b] = board[y][a];
+					--b;//move position in array
+				}
+				a = x; b = 7;//Horizontal right side
+				while(a<14 && b<=12){
+					++a;//move position on board
+					horiz[b] = board[y][a];
+					++b;//move position in array
+				}
+
+				a = y; b = 5;//Vertical top side
+				while(a>0 && b>=0){
+					--a;//move position on board
+					vert[b] = board[a][x];
+					--b;//move position in array
+				}
+				a = y; b = 7;//Vertical bottom side
+				while(a<14 && b<=12){
+					++a;//move position on board
+					vert[b] = board[a][x];
+					++b;//move position in array
+				}
+
+				a = 0; b = 5;//Slash top right
+				while(y+a>0 && x-a>0 && b>=0){
+					--a;//move position on board
+					vert[b] = board[y+a][x-a];
+					--b;//move position in array
+				}
+				a = 0; b = 7;//Slash bottom left
+				while(y+a<14 && x-a<14 && b<=12){
+					++a;//move position on board
+					vert[b] = board[y+a][x-a];
+					++b;//move position in array
+				}
+
+				a = 0; b = 5;//BSlash top left
+				while(y+a>0 && x+a>0 && b>=0){
+					--a;//move position on board
+					vert[b] = board[y+a][x+a];
+					--b;//move position in array
+				}
+				a = 0; b = 7;//BSlash bottom right
+				while(y+a<14 && x+a<14 && b<=12){
+					++a;//move position on board
+					vert[b] = board[y+a][x+a];
+					++b;//move position in array
+				}
+
+				for(a=0; a<13;++a)
+					line[a] = horiz[a];
+				score += linescore(COMP);
+				for(a=0; a<13;++a)
+					line[a] = vert[a];
+				score += linescore(COMP);
+				for(a=0; a<13;++a)
+					line[a] = slash[a];
+				score += linescore(COMP);
+				for(a=0; a<13;++a)
+					line[a] = bslash[a];
+				score += linescore(COMP);
+				if(score > maxscore)
+					maxscore = score;
+
+				//See what would happen if the player placed there
+				for(a=0; a< 13; ++a){
+					horiz[a] = COMP;
+					vert[a] = COMP;
+					slash[a] = COMP;
+					bslash[a] = COMP;
+				}
+				horiz[6] = HUMAN;
+				vert[6] = HUMAN;
+				slash[6] = HUMAN;
+				bslash[6] = HUMAN;
+				//Copy data from board into the arrays
+				
+				a = x; b = 5;//Horizontal left side
+				while(a>0 && b>=0){
+					--a;//move position on board
+					horiz[b] = board[y][a];
+					--b;//move position in array
+				}
+				a = x; b = 7;//Horizontal right side
+				while(a<14 && b<=12){
+					++a;//move position on board
+					horiz[b] = board[y][a];
+					++b;//move position in array
+				}
+
+				a = y; b = 5;//Vertical top side
+				while(a>0 && b>=0){
+					--a;//move position on board
+					vert[b] = board[a][x];
+					--b;//move position in array
+				}
+				a = y; b = 7;//Vertical bottom side
+				while(a<14 && b<=12){
+					++a;//move position on board
+					vert[b] = board[a][x];
+					++b;//move position in array
+				}
+
+				a = 0; b = 5;//Slash top right
+				while(y+a>0 && x-a>0 && b>=0){
+					--a;//move position on board
+					vert[b] = board[y+a][x-a];
+					--b;//move position in array
+				}
+				a = 0; b = 7;//Slash bottom left
+				while(y+a<14 && x-a<14 && b<=12){
+					++a;//move position on board
+					vert[b] = board[y+a][x-a];
+					++b;//move position in array
+				}
+
+				a = 0; b = 5;//BSlash top left
+				while(y+a>0 && x+a>0 && b>=0){
+					--a;//move position on board
+					vert[b] = board[y+a][x+a];
+					--b;//move position in array
+				}
+				a = 0; b = 7;//BSlash bottom right
+				while(y+a<14 && x+a<14 && b<=12){
+					++a;//move position on board
+					vert[b] = board[y+a][x+a];
+					++b;//move position in array
+				}
+
+				for(a=0; a<13;++a)
+					line[a] = horiz[a];
+				score2 += linescore(HUMAN);
+				for(a=0; a<13;++a)
+					line[a] = vert[a];
+				score2 += linescore(HUMAN);
+				for(a=0; a<13;++a)
+					line[a] = slash[a];
+				score2 += linescore(HUMAN);
+				for(a=0; a<13;++a)
+					line[a] = bslash[a];
+				score2 += linescore(HUMAN);
+				if(score2 > maxscore2)
+					maxscore2 = score2;
+								
+				//if(x>=2 && x<7 && y>=2 && y<7){
+					//	PS.debug((maxscore - maxscore2) + "\n");
+					//PS.debug(y+" "+x+": "+score+","+ score2+ "\n");
+				//}
+			}
+		}
+	}
+	//line = [0,0,0,0,0,HUMAN,COMP,0,0,0,0,0,0];
+	//PS.debug(linescore(COMP)+"\n");
+	
+	//PS.debug(maxscore +"," + maxscore2+ "\n");
+
+/*for(x=2;x<8;++x){
+	for(y=2;y<8;++y){
+		if(board[y][x]===COMP){
+			PS.debug(y+" "+x+": "+score+","+ score2+ "\n");
+		}
+	}
+}*/
+
+	
 //boardscore = Max(scoreArray) - Max(score2Array)
 
 //The program can maybe filter moves if there is a significantly better move (10x score)
-		return maxscore;
+		return maxscore - maxscore2;
 };
 
 

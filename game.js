@@ -43,6 +43,8 @@ var playerTurn = HUMAN;
 var board = new Board();
 var AIDEPTH = 2;
 
+var DAVIDAI = true;
+
 PS.init = function( system, options ) {
 	// Use PS.gridSize( x, y ) to set the grid to
 	// the initial dimensions you want (32 x 32 maximum)
@@ -84,13 +86,76 @@ PS.touch = function( x, y, data, options ) {
 			PS.statusText("AI is thinking. Please wait...");
 			playerTurn = COMP;
 			
-			board = max(AIDEPTH)(board);
+			if(DAVIDAI){
+				var nummax = 0;//Number of locations with the max score
+				var maxscore = 0;
+				
+				var scores = [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+								[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+								[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+								[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+								[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+								[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+								[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+								[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+								[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+								[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+								[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+								[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+								[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+								[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+								[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]];
+				
+				for(var a=0;a<15;a++){
+					for(var b=0;b<15;b++){
+						if(!board[a][b]){
+							board[a][b] = COMP;//See how adding a piece affects
+							//Store in array, as to only calculate once
+							scores[a][b] = heuristic(board);
+							if(scores[a][b] > maxscore){
+								maxscore = scores[a][b];
+								nummax = 1;
+							} else if(scores[a][b] === maxscore){
+								nummax++;
+							}
+							board[a][b] = NONE;//Revert board
+						 }
+					}
+				}
+				
+				var pos = Math.ceil(Math.random()*nummax);//Select a random one
+				for(var a=0;a<15;a++){
+					for(var b=0;b<15;b++){
+						if(!board[a][b]&&scores[a][b] === maxscore){
+							if(nummax === pos++){
+								board[a][b] = COMP;//Place a piece there
+								//PS.debug("Gotta ("+a+","+b+")");
+								a = 99, b=99;//Break doesn't seem to work here
+							}
+						}
+					}
+				}
+				
+				/*for(var a=0;a<15;a++){
+					for(var b=0;b<15;b++){
+						PS.debug(scores[a][b]+" ");
+					}
+					PS.debug("\n");
+				}
+				PS.debug("--------------------------------\n");
+				PS.debug(nummax+" "+maxscore+" "+pos+"\n");
+				PS.debug("--------------------------------\n");
+				*/
+			} else
+				board = max(AIDEPTH)(board);
+						
 			if (board === null) {PS.debug("Board is Null!");}
 			drawBoard(board);
 			if (handleWinnerIfNecessary(board)) {return;}
 			
 			playerTurn = HUMAN;
 			PS.statusText("Your turn!");
+			
 			break;
 		case COMP:
 			return;
@@ -208,6 +273,21 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 	//	PS.debug( "DOWN: key = " + key + ", shift = " + shift + "\n" );
 
 	// Add code here for when a key is pressed
+	
+	//line = [2,2,2,2,2,2,1,1,0,0,0,0,0];
+	//PS.debug(linescore(COMP)+"\n");
+	
+	for(var a=0;a<15;a++){
+		for(var b=0;b<15;b++){
+			if(!board[a][b]){
+				board[a][b] = COMP;
+				PS.debug(heuristic(board)+" ");
+				board[a][b] = NONE;
+			 }
+		}
+		PS.debug("\n");
+	}
+	PS.debug("--------------------------------");
 };
 
 // PS.keyUp ( key, shift, ctrl, options )
