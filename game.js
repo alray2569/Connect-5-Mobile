@@ -89,7 +89,12 @@ PS.touch = function( x, y, data, options ) {
 					PS.dbEvent(database, 
 							   "turn", "HUMAN",
 							   "win" , "HUMAN"
-							  );
+							  );				
+					PS.dbSend(database, ["alray", "dytang"], {
+						discard: true,
+						message: "Thanks for playing!"
+					});
+					playerTurn = NONE;
 					return;
 				}
 				PS.dbEvent(database, 
@@ -116,8 +121,17 @@ PS.touch = function( x, y, data, options ) {
 						   "turn", "COMP",
 						   "win" , "COMP"
 						  );
+				PS.dbSend(database, ["alray", "dytang"], {
+					discard: true,
+					message: "Thanks for playing!"
+				});
+				playerTurn = NONE;
 				return;
 			}
+			PS.dbEvent(database, 
+					   "turn", "COMP",
+					   "win" , "NONE"
+					  );
 			
 			for(var a=0;a<BOARDSIZE;++a){
 				for(var b=0;b<BOARDSIZE;++b){
@@ -186,5 +200,15 @@ var drawNewPiece = function (move) {
 	PS.radius(move.posX, move.posY, 50);
 	PS.border(move.posX, move.posY, 2);
 	PS.borderColor(move.posX, move.posY, PS.COLOR_BLACK);//Outline in black
+};
+
+PS.shutdown = function () {
+	PS.dbEvent(database,
+			   "turn", "Game shutdown"
+			  );
+	PS.dbSend(database, ["alray", "dytang"], {
+		discard: true,
+		message: "Thanks for playing!"
+	});
 };
 
