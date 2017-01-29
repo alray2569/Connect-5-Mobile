@@ -46,6 +46,7 @@ var playerTurn = HUMAN; // Whose turn is it?
 var board = new Board();// Representation of the board
 var AIDEPTH = 2;        // Minimax depth
 var BOARDSIZE = 15;
+var database;
 
 PS.init = function( system, options ) {
 	// Use PS.gridSize( x, y ) to set the grid to
@@ -57,6 +58,8 @@ PS.init = function( system, options ) {
 	PS.color(PS.ALL, PS.ALL, 0xff0000);
 	PS.gridColor(0xcccccc);
 	PS.borderColor(PS.ALL, PS.ALL, 0x000000);
+	
+	database = PS.dbInit("dart-cnx5-" + Date.now);
 };
 
 // PS.touch ( x, y, data, options )
@@ -79,8 +82,16 @@ PS.touch = function( x, y, data, options ) {
 				board = makeMove(board)(move); // make the move
 				drawNewPiece(move);
 				if (handleWinnerIfNecessary(board)) {// If a player has won, we're done here
+					PS.dbEvent(database, 
+							   "turn", "HUMAN",
+							   "win" , "HUMAN"
+							  );
 					return;
-				} 
+				}
+				PS.dbEvent(database, 
+						   "turn", "HUMAN",
+						   "win" , "NONE"
+						  );
 			}
 			else { // Illegal move
 				PS.statusText("Illegal move...");
@@ -94,7 +105,13 @@ PS.touch = function( x, y, data, options ) {
 			board = makeMove(board)(move); // COMP turn here
 			if (board === null) {PS.debug("Board is Null!");}
 			drawNewPiece(move);
-			if (handleWinnerIfNecessary(board)) {return;}
+			if (handleWinnerIfNecessary(board)) {
+				PS.dbEvent(database, 
+						   "turn", "COMP",
+						   "win" , "COMP"
+						  );
+				return;
+			}
 			
 			playerTurn = HUMAN; // HUMAN turn again
 			PS.statusText("Your turn!");

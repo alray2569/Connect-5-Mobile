@@ -286,6 +286,7 @@ var shouldKeep = function (board) {
 	"use strict";
 	return function (move) {
 		var x, y;
+
 		
 		for (x = move.posX - 2; x <= move.posX + 2; ++x) {
 			if (x < 0 || x >= BOARDSIZE) continue; // avoid bad values
