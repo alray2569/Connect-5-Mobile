@@ -1,4 +1,4 @@
-/* global heuristic: false, BOARDSIZE: false */
+/* global heuristic: true, BOARDSIZE: false */
 
 // AUTHOR ANDREW RAY
 
@@ -48,7 +48,7 @@ var checkWin = function (board) {
 	return NONE;
 };
 
-/*// SIMPLISTIC HEURISTIC, HERE AS AN EXAMPLE
+// SIMPLISTIC HEURISTIC, HERE AS AN EXAMPLE
 var heuristic = function (board) {
 	var total = 0;
 	
@@ -67,17 +67,18 @@ var heuristic = function (board) {
 	
 	return total;
 };
-*/
+
 
 // COUNTS THE NUMBER OF RUNS OF SPECIFIED LENGTH SPECIFIED
 // PLAYER HAS ON SPECIFIED BOARD.
 var countPlayerRuns = function (board, player, length) {
 	var x, i, q, color, count = 0,
+		
 	// flatten the array so we only need to do a single for loop.
 		fb = board.reduce(function (a,b) {return a.concat(b);});
 	
 	// loop over all positions
-	for (x = 0; x < BOARDSIZE ^ 2; ++x) {
+	for (x = 0; x < Math.pow(BOARDSIZE,2) ; ++x) {
 		color = fb[x];
 		
 		if (color === player) { 
@@ -140,20 +141,30 @@ var countPlayerRuns = function (board, player, length) {
 };
 
 /// Min's turn: probably don't call directly (leave that to max)
+/// Returns {move: moveTakenToGetHere, board: boardFromBottomOfTree}
 var min = function (itersLeft) {
 	"use strict";
 	
 	return function (board) { // for currying!
+		var nextmoves, boards;
 		if (itersLeft === 0) {
 			// final case: find the worst board
-			return board;
+			return {
+				move : null,
+				board: board
+			};
 		}
 		else {
 			// recursive case, get the worst next board
-			return getWorst(
-				nextBoards(board, getLegalMoves(HUMAN, board)), 
-				itersLeft
-			);
+			nextmoves = getLegalMoves(HUMAN, board);
+			boards    = nextmoves.map(function (move) {
+				return {
+					move : move,
+					board: max(itersLeft - 1)(makeMove(board)(move)).board
+				};
+			});
+			
+			return getWorst(boards);
 		}
 	};
 };
@@ -163,62 +174,59 @@ var max = function (itersLeft) {
 	"use strict";
 	
 	return function (board) { // for currying!
+		var boards, nextmoves;
 		if (itersLeft === 0) {
 			// final case
-			return board;
+			return {
+				move : null,
+				board: board
+			};
 		}
 		else {
 			// recursive case, get the best next board
-			return getBest(
-				nextBoards(board, getLegalMoves(COMP, board)),
-				itersLeft
-			);
+			nextmoves = getLegalMoves(COMP, board);
+			boards    = nextmoves.map(function (move) {
+				return {
+					move : move,
+					board: min(itersLeft - 1)(makeMove(board)(move)).board
+				};
+			});
+			
+			return getBest(boards);
 		}
 	};
 };
 
-var getBest = function (boards, itersLeft) {
-	var boardsWIdx = boards.map(function (board, index) {
-			return {board: board, idx: index};
-		}),
-		boardHeurs = boards.map(heuristic),
-		averageHeur = boardHeurs.reduce(function (a,b) {
-			return a + b;
-		}, 0) / boardHeurs.length,
-		filtrd = boardsWIdx.filter(function (board) {
-			return heuristic(board.board) >= averageHeur;
-		}),
-		chosen = filtrd.map(function (obj) {
-			return {board: min(itersLeft - 1)(obj.board), idx: obj.idx};
-		}),
-		scores = chosen.map(function (obj) {
-			return heuristic(obj.board);
-		}),
-		maxidx = scores.indexOf(Math.max.apply(null, scores));
+/// Returns the best boardObject given
+var getBest = function (boards) {
+	var heurs = boards.map(function (boardObj) {
+		return {
+			move:  boardObj.move,
+			board: boardObj.board,
+			heur:  heuristic(boardObj.board)
+		};
+	});
 	
-	return boards[chosen[maxidx].idx];
+	return heurs.reduce(function (a,b) {
+		if (a.heur > b.heur) return a;
+		else return b;
+	}, {heur: -Infinity});
 };
 
-var getWorst = function (boards, itersLeft) {
-	var boardsWIdx = boards.map(function (board, index) {
-			return {board: board, idx: index};
-		}),
-		boardHeurs = boards.map(heuristic),
-		averageHeur = boardHeurs.reduce(function (a,b) {
-			return a + b;
-		}, 0) / boardHeurs.length,
-		filtrd = boardsWIdx.filter(function (board) {
-			return heuristic(board.board) <= averageHeur;
-		}),
-		chosen = filtrd.map(function (obj) {
-			return {board: max(itersLeft - 1)(obj.board), idx: obj.idx};
-		}),
-		scores = chosen.map(function (obj) {
-			return heuristic(obj.board);
-		}),
-		minidx = scores.indexOf(Math.min.apply(null, scores));
+/// Returns the worst boardObject given
+var getWorst = function (boards) {
+	var heurs = boards.map(function (boardObj) {
+		return {
+			move:  boardObj.move,
+			board: boardObj.board,
+			heur:  heuristic(boardObj.board)
+		};
+	});
 	
-	return boards[chosen[minidx].idx];
+	return heurs.reduce(function (a,b) {
+		if (a.heur < b.heur) return a;
+		else return b;
+	}, {heur: Infinity});
 };
 
 /// Returns an array of next possible boards given a set of legal moves and 
@@ -233,8 +241,8 @@ var makeMove = function (board) {
 	return function (move) { // for currying!
 		var newboard = new Board(), x, y; // copy the board deeply
 		
-		for (x = 0; x < 15; ++x) {
-			for (y = 0; y < 15; ++y) {
+		for (x = 0; x < BOARDSIZE; ++x) {
+			for (y = 0; y < BOARDSIZE; ++y) {
 				newboard[x][y] = board[x][y];
 			}
 		}
@@ -254,12 +262,12 @@ var getLegalMoves = function (player, board) {
 var getAllMoves = function (player) {
 	"use strict";
 	var x, y,
-		toRet = new Array(15^2);
+		toRet = new Array(Math.pow(BOARDSIZE, 2));
 	
 	// iterate over all possible board array locations.
-	for (x = 0; x < 15; ++x) {
-		for (y = 0; y < 15; ++y) {
-			toRet[x * 15 + y] = new Move(player,x,y);
+	for (x = 0; x < BOARDSIZE; ++x) {
+		for (y = 0; y < BOARDSIZE; ++y) {
+			toRet[x * BOARDSIZE + y] = new Move(player,x,y);
 		}
 	}
 	
@@ -278,8 +286,9 @@ var shouldKeep = function (board) {
 	"use strict";
 	return function (move) {
 		var x, y;
+		
 		for (x = move.posX - 2; x <= move.posX + 2; ++x) {
-			if (x < 0 || x >= 15) continue; // avoid bad values
+			if (x < 0 || x >= BOARDSIZE) continue; // avoid bad values
 			for (y = move.posY - 2; y <= move.posY + 2; ++y) {
 				if (board[x][y]) {
 					return true;

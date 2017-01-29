@@ -90,9 +90,10 @@ PS.touch = function( x, y, data, options ) {
 			// AI Turn
 			PS.statusText("AI is thinking. Please wait...");
 			playerTurn = COMP;
-			board = max(AIDEPTH)(board); // COMP turn here
+			move = max(AIDEPTH)(board).move;
+			board = makeMove(board)(move); // COMP turn here
 			if (board === null) {PS.debug("Board is Null!");}
-			drawBoard(board);
+			drawNewPiece(move);
 			if (handleWinnerIfNecessary(board)) {return;}
 			
 			playerTurn = HUMAN; // HUMAN turn again
