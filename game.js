@@ -55,8 +55,9 @@ PS.init = function( system, options ) {
 	// Otherwise you will get the default 8x8 grid
 
 	PS.gridSize( BOARDSIZE, BOARDSIZE );
-	PS.color(PS.ALL, PS.ALL, 0xff0000);
-	PS.gridColor(0xcccccc);
+	PS.color(PS.ALL, PS.ALL, 0xf0e0b0);
+	PS.gridColor(0xf0e0b0);
+	PS.gridShadow(true,0xeeeeee);
 	PS.borderColor(PS.ALL, PS.ALL, 0x000000);
 	
 	database = PS.dbInit("dart-cnx5-" + Date.now);
@@ -80,7 +81,10 @@ PS.touch = function( x, y, data, options ) {
 			move = new Move(HUMAN, x, y);
 			if (isLegal(board)(move)) { // check legality of player move
 				board = makeMove(board)(move); // make the move
-				drawNewPiece(move);
+				drawNewPiece(move);//Also unhighlight any moves
+				PS.border(x, y, 5);//Thick border
+				PS.borderColor(x, y, PS.COLOR_RED);//Red border
+				
 				if (handleWinnerIfNecessary(board)) {// If a player has won, we're done here
 					PS.dbEvent(database, 
 							   "turn", "HUMAN",
@@ -101,8 +105,10 @@ PS.touch = function( x, y, data, options ) {
 			// AI Turn
 			PS.statusText("AI is thinking. Please wait...");
 			playerTurn = COMP;
+			var oldboard = board;
 			move = max(AIDEPTH)(board).move;
 			board = makeMove(board)(move); // COMP turn here
+			
 			if (board === null) {PS.debug("Board is Null!");}
 			drawNewPiece(move);
 			if (handleWinnerIfNecessary(board)) {
@@ -111,6 +117,16 @@ PS.touch = function( x, y, data, options ) {
 						   "win" , "COMP"
 						  );
 				return;
+			}
+			
+			for(var a=0;a<BOARDSIZE;++a){
+				for(var b=0;b<BOARDSIZE;++b){
+					if(oldboard[a][b]!==board[a][b]){
+						//Highlight any new pieces (should only have one)
+						PS.border(a, b, 5);//Thick border
+						PS.borderColor(a, b, PS.COLOR_RED);//Red border
+					}
+				}
 			}
 			
 			playerTurn = HUMAN; // HUMAN turn again
@@ -144,8 +160,8 @@ var drawBoard = function (board) {
 	var x, y;
 	
 	// double iteration to cover all spaces
-	for (x = 0; x < 15; ++x) {
-		for (y = 0; y < 15; ++y) {
+	for (x = 0; x < BOARDSIZE; ++x) {
+		for (y = 0; y < BOARDSIZE; ++y) {
 			switch (board[x][y]) {
 				case HUMAN:
 					drawNewPiece(new Move(HUMAN, x, y));
@@ -153,8 +169,8 @@ var drawBoard = function (board) {
 				case COMP:
 					drawNewPiece(new Move(COMP, x, y));
 					break;
-				case NONE:
-					PS.glyph(x, y, PS.NONE);
+				//case NONE:
+					//PS.glyph(x, y, PS.NONE);
 			}
 		}
 	}
@@ -162,7 +178,13 @@ var drawBoard = function (board) {
 
 // DRAW A PIECE
 var drawNewPiece = function (move) {
-	PS.glyphColor(move.posX, move.posY, move.player === HUMAN ? 0x000000 : 0xfffffff);
-	PS.glyph(move.posX, move.posY, '\u2B24');
+	//PS.glyphColor(move.posX, move.posY, move.player === HUMAN ? 0x000000 : 0xfffffff);
+	//PS.glyph(move.posX, move.posY, '\u2B24');
+	
+	//I think off-white/black looks better
+	PS.color(move.posX, move.posY, (move.player === HUMAN) ? 0x404040 : 0xdfdfdf);
+	PS.radius(move.posX, move.posY, 50);
+	PS.border(move.posX, move.posY, 2);
+	PS.borderColor(move.posX, move.posY, PS.COLOR_BLACK);//Outline in black
 };
 
