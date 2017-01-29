@@ -42,9 +42,10 @@ along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
 
 // AUTHOR: ANDREW RAY
 
-var playerTurn = HUMAN;
-var board = new Board();
-var AIDEPTH = 2;
+var playerTurn = HUMAN; // Whose turn is it?
+var board = new Board();// Representation of the board
+var AIDEPTH = 2;        // Minimax depth
+var BOARDSIZE = 15;
 
 PS.init = function( system, options ) {
 	// Use PS.gridSize( x, y ) to set the grid to
@@ -52,8 +53,7 @@ PS.init = function( system, options ) {
 	// Do this FIRST to avoid problems!
 	// Otherwise you will get the default 8x8 grid
 
-	PS.gridSize( 15, 15 );
-	// Set the borders
+	PS.gridSize( BOARDSIZE, BOARDSIZE );
 	PS.color(PS.ALL, PS.ALL, 0xff0000);
 	PS.gridColor(0xcccccc);
 	PS.borderColor(PS.ALL, PS.ALL, 0x000000);
@@ -73,29 +73,33 @@ PS.touch = function( x, y, data, options ) {
 	var move;
 	
 	switch (playerTurn) {
-		case HUMAN:
+		case HUMAN: // Human player's turn
 			move = new Move(HUMAN, x, y);
-			if (isLegal(board)(move)) {
+			if (isLegal(board)(move)) { // check legality of player move
 				board = makeMove(board)(move); // make the move
 				drawNewPiece(move);
-				if (handleWinnerIfNecessary(board)) {return;}
+				if (handleWinnerIfNecessary(board)) {// If a player has won, we're done here
+					return;
+				} 
 			}
-			else {
+			else { // Illegal move
 				PS.statusText("Illegal move...");
 				return;
 			}
+			
+			// AI Turn
 			PS.statusText("AI is thinking. Please wait...");
 			playerTurn = COMP;
-			
-			board = max(AIDEPTH)(board);
+			board = max(AIDEPTH)(board); // COMP turn here
 			if (board === null) {PS.debug("Board is Null!");}
 			drawBoard(board);
 			if (handleWinnerIfNecessary(board)) {return;}
 			
-			playerTurn = HUMAN;
+			playerTurn = HUMAN; // HUMAN turn again
 			PS.statusText("Your turn!");
 			break;
 		case COMP:
+			// Ignore on COMP turn
 			return;
 		default:
 			return;
@@ -103,6 +107,7 @@ PS.touch = function( x, y, data, options ) {
 	
 };
 
+// UPDATE THE STATUS LINE BASED ON THE RETURN OF CHECKWIN
 var handleWinnerIfNecessary = function (board) {
 	switch (checkWin(board)) {
 		case NONE:
@@ -116,9 +121,11 @@ var handleWinnerIfNecessary = function (board) {
 	}
 };
 
+// DRAW THE BOARD
 var drawBoard = function (board) {
 	var x, y;
 	
+	// double iteration to cover all spaces
 	for (x = 0; x < 15; ++x) {
 		for (y = 0; y < 15; ++y) {
 			switch (board[x][y]) {
@@ -135,6 +142,7 @@ var drawBoard = function (board) {
 	}
 };
 
+// DRAW A PIECE
 var drawNewPiece = function (move) {
 	PS.glyphColor(move.posX, move.posY, move.player === HUMAN ? 0x000000 : 0xfffffff);
 	PS.glyph(move.posX, move.posY, '\u2B24');

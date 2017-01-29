@@ -1,4 +1,4 @@
-/* global heuristic: false */
+/* global heuristic: false, BOARDSIZE: false */
 
 // AUTHOR ANDREW RAY
 
@@ -37,13 +37,18 @@ var Board = function () {
 			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]];
 };
 
+// CHECKS FOR THE EXISTANCE OF ANY 5-PIECE RUNS
 var checkWin = function (board) {
+	// If the number of runs of five is greater than 0,
+	// i.e. truthy, return the player who won.
 	if (countPlayerRuns(board, HUMAN, 5)) return HUMAN;
 	if (countPlayerRuns(board, COMP , 5)) return COMP ;
+	
+	// If both players have (falsy) 0 runs, return NONE
 	return NONE;
 };
 
-/*
+/*// SIMPLISTIC HEURISTIC, HERE AS AN EXAMPLE
 var heuristic = function (board) {
 	var total = 0;
 	
@@ -64,20 +69,22 @@ var heuristic = function (board) {
 };
 */
 
+// COUNTS THE NUMBER OF RUNS OF SPECIFIED LENGTH SPECIFIED
+// PLAYER HAS ON SPECIFIED BOARD.
 var countPlayerRuns = function (board, player, length) {
 	var x, i, q, color, count = 0,
 	// flatten the array so we only need to do a single for loop.
 		fb = board.reduce(function (a,b) {return a.concat(b);});
 	
 	// loop over all positions
-	for (x = 0; x < 225; ++x) {
+	for (x = 0; x < BOARDSIZE ^ 2; ++x) {
 		color = fb[x];
 		
 		if (color === player) { 
 			
 			// Check horizontal - win
 			i = q = 0;
-			if (x % 15 <= 14 - length) {// horizontal can't start in last four columns.
+			if (x % BOARDSIZE <= BOARDSIZE - 1 - length) {// horizontal can't start in last n - 1 columns
 				while (true) {
 					// increment i
 					++i;
@@ -94,11 +101,11 @@ var countPlayerRuns = function (board, player, length) {
 			
 			// Check diagonal / win
 			i = q = 0;
-			if (x % 15 >= length - 1) { // left diagonal can't start in first four columns
+			if (x % BOARDSIZE >= length - 1) { // left diagonal can't start in first n - 1 columns
 				while (true) {
-					++i; q += 14;
+					++i; q += BOARDSIZE - 1; // BS - 1 is the distance between diag-down-left consecutives
 					if (i === length) 
-						return color;
+						++count;
 					if (fb[x + q] !== color)
 						break;
 				}
@@ -107,7 +114,7 @@ var countPlayerRuns = function (board, player, length) {
 			// Check vertical | win
 			i = q = 0;
 			while (true) {
-				++i; q += 15;
+				++i; q += BOARDSIZE; // BS is dist between consec verticals
 				if (i === length)
 					++count;
 				if (fb[x + q] !== color)
@@ -116,9 +123,9 @@ var countPlayerRuns = function (board, player, length) {
 			
 			// Check diagonal \ win
 			i = q = 0;
-			if (x % 15 <= 14 - length) {// right diagonal can't start in last four columns
+			if (x % BOARDSIZE <= BOARDSIZE - 1 - length) {// right diagonal can't start in last n - 1 columns
 				while (true) {
-					++i; q += 16;
+					++i; q += BOARDSIZE + 1; // BS + 1 is dist btwn consec diag-down-right
 					if (i === length)
 						++count;
 					if (fb[x + q] !== color)
@@ -142,7 +149,7 @@ var min = function (itersLeft) {
 			return board;
 		}
 		else {
-			// recursive case, call to max then find worst board
+			// recursive case, get the worst next board
 			return getWorst(
 				nextBoards(board, getLegalMoves(HUMAN, board)), 
 				itersLeft
@@ -161,7 +168,7 @@ var max = function (itersLeft) {
 			return board;
 		}
 		else {
-			// recursive case, call to min then find worst board
+			// recursive case, get the best next board
 			return getBest(
 				nextBoards(board, getLegalMoves(COMP, board)),
 				itersLeft
