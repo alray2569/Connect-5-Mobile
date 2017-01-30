@@ -80,7 +80,7 @@ PS.touch = function( x, y, data, options ) {
 		case HUMAN: // Human player's turn
 			move = new Move(HUMAN, x, y);
 			if (isLegal(board)(move)) { // check legality of player move
-				board = makeMove(board)(move); // make the move
+				board = makeMove(board)(move); // make the move 	
 				drawNewPiece(move);
 				/*
 				drawBoard(board);//Also unhighlight any moves
@@ -123,10 +123,36 @@ PS.touch = function( x, y, data, options ) {
 				}
 			}
 			move = max(AIDEPTH)(board).move;
-			board = makeMove(board)(move); // COMP turn here
+			//board = makeMove(board)(move); // COMP turn here
+			var maxh = 0, maxa=0, maxb=0, h=0;
+			for(var b=0;b<BOARDSIZE;++b){
+				for(var a=0;a<BOARDSIZE;++a){
+					if(board[b][a]===NONE){
+						board[b][a] = COMP;
+						h = spacescore(a,b);
+						if(h >= maxh){
+							maxh = h;
+							maxa = a;
+							maxb = b;
+						}
+						board[b][a] = NONE;
+						//PS.debug(spacescore(a,b)+" ");
+					} else {
+						//PS.debug("("+spacescore(a,b)+") ");
+					}
+				}
+				PS.debug("\n");
+			}
+			//PS.debug("-----"+board[maxb][maxa]+" "+maxh+" "+maxb+","+maxa+"\n");
+			board[maxb][maxa]=COMP;
+			PS.color(maxb, maxa, (move.player === HUMAN) ? 0x404040 : 0xdfdfdf);
+			PS.radius(maxb, maxa, 50);
+			PS.border(maxb, maxa, 2);
+			PS.borderColor(maxb, maxa, PS.COLOR_BLACK);//Outline in black
+			
 			
 			if (board === null) {PS.debug("Board is Null!");}
-			drawNewPiece(move);
+			//drawNewPiece(move);
 			if (handleWinnerIfNecessary(board)) {
 				PS.dbEvent(database, 
 						   "turn", "COMP",
@@ -225,4 +251,3 @@ PS.shutdown = function () {
 		message: "Thanks for playing!"
 	});
 };
-
