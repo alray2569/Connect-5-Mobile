@@ -81,9 +81,15 @@ PS.touch = function( x, y, data, options ) {
 			move = new Move(HUMAN, x, y);
 			if (isLegal(board)(move)) { // check legality of player move
 				board = makeMove(board)(move); // make the move
-				drawNewPiece(move);//Also unhighlight any moves
+				drawNewPiece(move);
+				/*
+				drawBoard(board);//Also unhighlight any moves
 				PS.border(x, y, 5);//Thick border
 				PS.borderColor(x, y, PS.COLOR_RED);//Red border
+				*/
+				//Not that the above three liens are irrelevant, since the draw
+				//function is only called when PS.touch ends. Can try to modify
+				//it so that the PS.touch function is left when the player moves?
 				
 				if (handleWinnerIfNecessary(board)) {// If a player has won, we're done here
 					PS.dbEvent(database, 
@@ -110,7 +116,12 @@ PS.touch = function( x, y, data, options ) {
 			// AI Turn
 			PS.statusText("AI is thinking. Please wait...");
 			playerTurn = COMP;
-			var oldboard = board;
+			var oldboard = new Board();//Fully copy
+			for(var a=0;a<BOARDSIZE;++a){
+				for(var b=0;b<BOARDSIZE;++b){
+					oldboard[a][b]=board[a][b];
+				}
+			}
 			move = max(AIDEPTH)(board).move;
 			board = makeMove(board)(move); // COMP turn here
 			
@@ -139,6 +150,9 @@ PS.touch = function( x, y, data, options ) {
 						//Highlight any new pieces (should only have one)
 						PS.border(a, b, 5);//Thick border
 						PS.borderColor(a, b, PS.COLOR_RED);//Red border
+					} else if(board[a][b]) {
+						PS.border(a, b, 2);//Thick border
+						PS.borderColor(a, b, PS.COLOR_BLACK);//Red border
 					}
 				}
 			}
