@@ -141,7 +141,7 @@ PS.touch = function( x, y, data, options ) {
 						//PS.debug("("+spacescore(a,b)+") ");
 					}
 				}
-				PS.debug("\n");
+				//PS.debug("\n");
 			}
 			//PS.debug("-----"+board[maxb][maxa]+" "+maxh+" "+maxb+","+maxa+"\n");
 			board[maxb][maxa]=COMP;
