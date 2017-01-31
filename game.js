@@ -40,7 +40,7 @@ along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
 // [options] = an object with optional parameters; see documentation for details
 
 
-// AUTHOR: ANDREW RAY
+// AUTHOR: ANDREW RAY, David Tang
 
 var playerTurn = HUMAN; // Whose turn is it?
 var board = new Board();// Representation of the board
@@ -61,6 +61,9 @@ PS.init = function( system, options ) {
 	PS.borderColor(PS.ALL, PS.ALL, 0x000000);
 	
 	database = PS.dbInit("dart-cnx5-" + Date.now);
+	PS.statusText("You go first");
+	PS.audioLoad( "fx_click", { lock : true } );
+	PS.timerStart(6,update);//Make sure the computer moves
 };
 
 // PS.touch ( x, y, data, options )
@@ -76,88 +79,22 @@ PS.touch = function( x, y, data, options ) {
 	// PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
 	var move;
 	
-	switch (playerTurn) {
-		case HUMAN: // Human player's turn
-			move = new Move(HUMAN, x, y);
-			if (isLegal(board)(move)) { // check legality of player move
-				board = makeMove(board)(move); // make the move 	
-				drawNewPiece(move);
-				/*
-				drawBoard(board);//Also unhighlight any moves
-				PS.border(x, y, 5);//Thick border
-				PS.borderColor(x, y, PS.COLOR_RED);//Red border
-				*/
-				//Not that the above three liens are irrelevant, since the draw
-				//function is only called when PS.touch ends. Can try to modify
-				//it so that the PS.touch function is left when the player moves?
-				
-				if (handleWinnerIfNecessary(board)) {// If a player has won, we're done here
-					PS.dbEvent(database, 
-							   "turn", "HUMAN",
-							   "win" , "HUMAN"
-							  );				
-					PS.dbSend(database, ["alray", "dytang"], {
-						discard: true,
-						message: "Thanks for playing!"
-					});
-					playerTurn = NONE;
-					return;
-				}
+	if(playerTurn === HUMAN) { // Human player's turn
+		move = new Move(HUMAN, x, y);
+		if (isLegal(board)(move)) { // check legality of player move
+			board = makeMove(board)(move); // make the move 	
+			drawNewPiece(move);
+			
+			drawBoard(board);//Also unhighlight any moves
+			PS.border(x, y, 5);//Thick border
+			PS.borderColor(x, y, PS.COLOR_RED);//Red border
+			PS.audioPlay("fx_click");
+
+			if (handleWinnerIfNecessary(board)) {// If a player has won, we're done here
 				PS.dbEvent(database, 
 						   "turn", "HUMAN",
-						   "win" , "NONE"
-						  );
-			}
-			else { // Illegal move
-				PS.statusText("Illegal move...");
-				return;
-			}
-			
-			// AI Turn
-			PS.statusText("AI is thinking. Please wait...");
-			playerTurn = COMP;
-			var oldboard = new Board();//Fully copy
-			for(var a=0;a<BOARDSIZE;++a){
-				for(var b=0;b<BOARDSIZE;++b){
-					oldboard[a][b]=board[a][b];
-				}
-			}
-			move = max(AIDEPTH)(board).move;
-			//board = makeMove(board)(move); // COMP turn here
-			var maxh = 0, maxa=0, maxb=0, h=0;
-			for(var b=0;b<BOARDSIZE;++b){
-				for(var a=0;a<BOARDSIZE;++a){
-					if(board[b][a]===NONE){
-						board[b][a] = COMP;
-						h = spacescore(a,b);
-						if(h >= maxh){
-							maxh = h;
-							maxa = a;
-							maxb = b;
-						}
-						board[b][a] = NONE;
-						//PS.debug(spacescore(a,b)+" ");
-					} else {
-						//PS.debug("("+spacescore(a,b)+") ");
-					}
-				}
-				//PS.debug("\n");
-			}
-			//PS.debug("-----"+board[maxb][maxa]+" "+maxh+" "+maxb+","+maxa+"\n");
-			board[maxb][maxa]=COMP;
-			PS.color(maxb, maxa, (move.player === HUMAN) ? 0x404040 : 0xdfdfdf);
-			PS.radius(maxb, maxa, 50);
-			PS.border(maxb, maxa, 2);
-			PS.borderColor(maxb, maxa, PS.COLOR_BLACK);//Outline in black
-			
-			
-			if (board === null) {PS.debug("Board is Null!");}
-			//drawNewPiece(move);
-			if (handleWinnerIfNecessary(board)) {
-				PS.dbEvent(database, 
-						   "turn", "COMP",
-						   "win" , "COMP"
-						  );
+						   "win" , "HUMAN"
+						  );				
 				PS.dbSend(database, ["alray", "dytang"], {
 					discard: true,
 					message: "Thanks for playing!"
@@ -166,34 +103,98 @@ PS.touch = function( x, y, data, options ) {
 				return;
 			}
 			PS.dbEvent(database, 
-					   "turn", "COMP",
+					   "turn", "HUMAN",
 					   "win" , "NONE"
 					  );
 			
-			for(var a=0;a<BOARDSIZE;++a){
-				for(var b=0;b<BOARDSIZE;++b){
-					if(oldboard[a][b]!==board[a][b]){
-						//Highlight any new pieces (should only have one)
-						PS.border(a, b, 5);//Thick border
-						PS.borderColor(a, b, PS.COLOR_RED);//Red border
-					} else if(board[a][b]) {
-						PS.border(a, b, 2);//Thick border
-						PS.borderColor(a, b, PS.COLOR_BLACK);//Red border
-					}
-				}
-			}
 			
-			playerTurn = HUMAN; // HUMAN turn again
-			PS.statusText("Your turn!");
-			break;
-		case COMP:
-			// Ignore on COMP turn
+			
+			playerTurn = COMP;//Successful turn
+		}
+		else { // Illegal move
+			PS.statusText("Cannot place pieces on others");
 			return;
-		default:
-			return;
+		}
 	}
 	
 };
+
+var update = function(){
+	if(playerTurn === COMP) { // AI Turn
+		PS.statusText("AI is thinking...");
+		var oldboard = new Board();//Fully copy
+		for(var a=0;a<BOARDSIZE;++a){
+			for(var b=0;b<BOARDSIZE;++b){
+				oldboard[a][b]=board[a][b];
+			}
+		}
+		//move = max(AIDEPTH)(board).move;
+		//board = makeMove(board)(move); // COMP turn here
+		var maxh = 0, maxa=0, maxb=0, h=0;
+		for(var b=0;b<BOARDSIZE;++b){
+			for(var a=0;a<BOARDSIZE;++a){
+				if(board[b][a]===NONE){
+					board[b][a] = COMP;
+					h = spacescore(a,b);
+					if(h >= maxh){
+						maxh = h;
+						maxa = a;
+						maxb = b;
+					}
+					board[b][a] = NONE;
+					//PS.debug(spacescore(a,b)+" ");//Draw the valuation of spaces
+				} else {
+					//PS.debug("("+spacescore(a,b)+") ");
+				}
+			}
+			//PS.debug("\n");
+		}
+		//PS.debug("-----"+board[maxb][maxa]+" "+maxh+" "+maxb+","+maxa+"\n");
+		board[maxb][maxa]=COMP;
+		PS.color(maxb, maxa, 0xdfdfdf);//Draw a piece
+		PS.radius(maxb, maxa, 50);
+		PS.border(maxb, maxa, 2);
+		PS.borderColor(maxb, maxa, PS.COLOR_BLACK);//Outline in black
+		//TODO: Make sure board is not filled up
+
+		if (board === null) {PS.debug("Board is Null!");}
+		//drawNewPiece(move);
+		for(var a=0;a<BOARDSIZE;++a){
+			for(var b=0;b<BOARDSIZE;++b){
+				if(oldboard[a][b]!==board[a][b]){
+					//Highlight any new pieces (should only have one)
+					PS.border(a, b, 5);//Thick border
+					PS.borderColor(a, b, PS.COLOR_RED);//Red border
+				} else if(board[a][b]) {
+					PS.border(a, b, 2);//Thick border
+					PS.borderColor(a, b, PS.COLOR_BLACK);//Red border
+				}
+			}
+		}
+		
+		if (handleWinnerIfNecessary(board)) {
+			PS.dbEvent(database, 
+					   "turn", "COMP",
+					   "win" , "COMP"
+					  );
+			PS.dbSend(database, ["alray", "dytang"], {
+				discard: true,
+				message: "Thanks for playing!"
+			});
+			playerTurn = NONE;
+			return;
+		}
+		PS.dbEvent(database, 
+				   "turn", "COMP",
+				   "win" , "NONE"
+				  );
+
+		
+
+		playerTurn = HUMAN; // HUMAN turn again
+		PS.statusText("Your move");
+	}
+}
 
 // UPDATE THE STATUS LINE BASED ON THE RETURN OF CHECKWIN
 var handleWinnerIfNecessary = function (board) {
@@ -201,12 +202,12 @@ var handleWinnerIfNecessary = function (board) {
 		case NONE:
 			return false;
 		case HUMAN:
-			PS.statusText("Congratulations! You win!");
+			PS.statusText("You win");
 			return true;
 		case COMP:
-			PS.statusText("Sorry! You lose.");
+			PS.statusText("Computer won");
 			return true;
-	}
+	}//TODO: Implement click anywhere to restart
 };
 
 // DRAW THE BOARD

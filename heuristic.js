@@ -170,9 +170,29 @@ var linepoints = function(width, numblock, delayblocks, superdelay, plusone, plu
 var otherscore = function(val){
 	switch(val){
 		case 5:
-			return 1;
-		default:
-			return 5*val;
+			return 1;//So their first move is placing next to opponent
+		case 10:
+			return 200;
+		case 100:
+			return 200;
+		case 230:
+			return 400;
+		case 300:
+			return 1000;
+		case 6000:
+			return 10000;
+		case 12000:
+			return 200000;
+		case 18000:
+			return 180000;
+		case 210000:
+			return 1000000;
+		case 500000:
+			return 2000000;
+		case 10000000:
+			return 20000000;
+		case 0:
+			return 0;
 	}
 };
 
