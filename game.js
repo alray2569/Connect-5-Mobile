@@ -44,9 +44,11 @@ along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
 
 var playerTurn = HUMAN; // Whose turn is it?
 var board = new Board();// Representation of the board
-var AIDEPTH = 2;        // Minimax depth
-var BOARDSIZE = 15;
+const AIDEPTH = 2;        // Minimax depth
+const BOARDSIZE = 15;
 var database;
+var gameover;//When the game ended
+const COLOR = 0xE0C080;
 
 PS.init = function( system, options ) {
 	// Use PS.gridSize( x, y ) to set the grid to
@@ -55,15 +57,18 @@ PS.init = function( system, options ) {
 	// Otherwise you will get the default 8x8 grid
 
 	PS.gridSize( BOARDSIZE, BOARDSIZE );
-	PS.color(PS.ALL, PS.ALL, 0xC0B080);
-	PS.gridColor(0xC0B080);
+	PS.color(PS.ALL, PS.ALL, COLOR);
+	PS.gridColor(COLOR);
 	PS.gridShadow(true,0xeeeeee);
 	PS.borderColor(PS.ALL, PS.ALL, 0x000000);
 	
 	database = PS.dbInit("dart-cnx5-" + Date.now());
 	PS.statusText("You go first");
-	PS.audioLoad( "fx_click", { lock : true } );
+	PS.audioLoad( "fx_tick", { lock : true } );//Win
+	PS.audioLoad( "perc_block_low", { lock : true } );//Place piece
+	PS.audioLoad( "fx_bucket", { lock : true } );//Lose
 	PS.timerStart(6,update);//Make sure the computer moves
+	gameover = false;//Not over yet
 };
 
 // PS.touch ( x, y, data, options )
@@ -79,7 +84,24 @@ PS.touch = function( x, y, data, options ) {
 	// PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
 	var move;
 	
-	if(playerTurn === HUMAN) { // Human player's turn
+	if(gameover){
+		for(var a=0; a<BOARDSIZE; ++a){
+			for(var b=0; b<BOARDSIZE; ++b){
+				board[a][b] = NONE;
+			}
+		}
+		PS.color(PS.ALL, PS.ALL, COLOR);
+		PS.gridColor(COLOR);
+		PS.borderColor(PS.ALL, PS.ALL, 0x000000);
+		PS.border(PS.ALL, PS.ALL, 1);
+		PS.radius(PS.ALL, PS.ALL, 0);
+		database = PS.dbInit("dart-cnx5-" + Date.now());
+		PS.statusText("You go first");
+		
+		gameover = false;
+		playerTurn = HUMAN;
+	}
+	else if(playerTurn === HUMAN) { // Human player's turn
 		move = new Move(HUMAN, x, y);
 		if (isLegal(board)(move)) { // check legality of player move
 			board = makeMove(board)(move); // make the move 	
@@ -88,9 +110,11 @@ PS.touch = function( x, y, data, options ) {
 			drawBoard(board);//Also unhighlight any moves
 			PS.border(x, y, 5);//Thick border
 			PS.borderColor(x, y, PS.COLOR_RED);//Red border
-			PS.audioPlay("fx_click");
+			PS.audioPlay("perc_block_low");
 
 			if (handleWinnerIfNecessary(board)) {// If a player has won, we're done here
+				gameover = true;
+				PS.audioPlay("fx_tick", { lock: true });
 				PS.dbEvent(database, 
 						   "turn", "HUMAN",
 						   "win" , "HUMAN"
@@ -120,7 +144,7 @@ PS.touch = function( x, y, data, options ) {
 };
 
 var update = function(){
-	if(playerTurn === COMP) { // AI Turn
+	if(playerTurn === COMP && !gameover) { // AI Turn
 		PS.statusText("AI is thinking...");
 		var oldboard = new Board();//Fully copy
 		for(var a=0;a<BOARDSIZE;++a){
@@ -173,6 +197,8 @@ var update = function(){
 		}
 		
 		if (handleWinnerIfNecessary(board)) {
+			gameover = true;
+			PS.audioPlay("fx_bucket", { lock: true });//You "kicked the bucket"
 			PS.dbEvent(database, 
 					   "turn", "COMP",
 					   "win" , "COMP"
@@ -202,10 +228,10 @@ var handleWinnerIfNecessary = function (board) {
 		case NONE:
 			return false;
 		case HUMAN:
-			PS.statusText("You win");
+			PS.statusText("You win. Click anywhere to play again");
 			return true;
 		case COMP:
-			PS.statusText("Computer won");
+			PS.statusText("Computer won. Click anywhere to play again");
 			return true;
 	}//TODO: Implement click anywhere to restart
 };

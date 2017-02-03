@@ -172,25 +172,25 @@ var otherscore = function(val){
 		case 5:
 			return 1;//So their first move is placing next to opponent
 		case 10:
-			return 200;
+			return 80;
 		case 100:
 			return 200;
 		case 230:
-			return 400;
+			return 270;
 		case 300:
-			return 1000;
+			return 2000;
 		case 6000:
-			return 10000;
+			return 5000;
 		case 12000:
-			return 200000;
+			return 10000;
 		case 18000:
-			return 180000;
+			return 15000;
 		case 210000:
-			return 1000000;
+			return 180000;
 		case 500000:
-			return 2000000;
+			return 400000;
 		case 10000000:
-			return 20000000;
+			return 5000000;
 		case 0:
 			return 0;
 	}
@@ -295,7 +295,7 @@ var spacescore = function(x, y){
 		--b;//move position in array
 	}
 	a = x; b = 7;//Horizontal right side
-	while(a<14 && b<=12){
+	while(a<BOARDSIZE-1 && b<=12){
 		++a;//move position on board
 		horiz[b] = board[y][a];
 		++b;//move position in array
@@ -308,7 +308,7 @@ var spacescore = function(x, y){
 		--b;//move position in array
 	}
 	a = y; b = 7;//Vertical bottom side
-	while(a<14 && b<=12){
+	while(a<BOARDSIZE-1 && b<=12){
 		++a;//move position on board
 		vert[b] = board[a][x];
 		++b;//move position in array
@@ -321,7 +321,7 @@ var spacescore = function(x, y){
 		--b;//move position in array
 	}
 	a = 0; b = 7;//Slash bottom left
-	while(y+a<14 && x-a<14 && b<=12){
+	while(y+a<BOARDSIZE-1 && x-a<BOARDSIZE-1 && b<=12){
 		++a;//move position on board
 		slash[b] = board[y+a][x-a];
 		++b;//move position in array
@@ -334,7 +334,7 @@ var spacescore = function(x, y){
 		--b;//move position in array
 	}
 	a = 0; b = 7;//BSlash bottom right
-	while(y+a<14 && x+a<14 && b<=12){
+	while(y+a<BOARDSIZE-1 && x+a<BOARDSIZE-1 && b<=12){
 		++a;//move position on board
 		bslash[b] = board[y+a][x+a];
 		++b;//move position in array
@@ -375,7 +375,7 @@ var spacescore = function(x, y){
 		--b;//move position in array
 	}
 	a = x; b = 7;//Horizontal right side
-	while(a<14 && b<=12){
+	while(a<BOARDSIZE-1 && b<=12){
 		++a;//move position on board
 		horiz[b] = board[y][a];
 		++b;//move position in array
@@ -388,7 +388,7 @@ var spacescore = function(x, y){
 		--b;//move position in array
 	}
 	a = y; b = 7;//Vertical bottom side
-	while(a<14 && b<=12){
+	while(a<BOARDSIZE-1 && b<=12){
 		++a;//move position on board
 		vert[b] = board[a][x];
 		++b;//move position in array
@@ -401,7 +401,7 @@ var spacescore = function(x, y){
 		--b;//move position in array
 	}
 	a = 0; b = 7;//Slash bottom left
-	while(y+a<14 && x-a<14 && b<=12){
+	while(y+a<BOARDSIZE-1 && x-a<14 && b<=12){
 		++a;//move position on board
 		slash[b] = board[y+a][x-a];
 		++b;//move position in array
@@ -414,7 +414,7 @@ var spacescore = function(x, y){
 		--b;//move position in array
 	}
 	a = 0; b = 7;//BSlash bottom right
-	while(y+a<14 && x+a<14 && b<=12){
+	while(y+a<BOARDSIZE-1 && x+a<14 && b<=12){
 		++a;//move position on board
 		bslash[b] = board[y+a][x+a];
 		++b;//move position in array
@@ -444,8 +444,8 @@ var heuristic = function (board) {
 	//O being AI piece, X being player piece
 	var x, y, a, b;
 	var maxscore = 0, maxscore2 = 0, score = 0, score2 = 0;
-	for(x=0;x<15;++x){
-		for(y=0;y<15;++y){
+	for(x=0;x<BOARDSIZE;++x){
+		for(y=0;y<BOARDSIZE;++y){
 			if(!board[y][x]){//Unoccupied
 				
 				if(spacescore(y,x) > maxscore)
