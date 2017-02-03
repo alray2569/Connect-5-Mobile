@@ -55,12 +55,12 @@ PS.init = function( system, options ) {
 	// Otherwise you will get the default 8x8 grid
 
 	PS.gridSize( BOARDSIZE, BOARDSIZE );
-	PS.color(PS.ALL, PS.ALL, 0xf0e0b0);
-	PS.gridColor(0xf0e0b0);
+	PS.color(PS.ALL, PS.ALL, 0xC0B080);
+	PS.gridColor(0xC0B080);
 	PS.gridShadow(true,0xeeeeee);
 	PS.borderColor(PS.ALL, PS.ALL, 0x000000);
 	
-	database = PS.dbInit("dart-cnx5-" + Date.now);
+	database = PS.dbInit("dart-cnx5-" + Date.now());
 	PS.statusText("You go first");
 	PS.audioLoad( "fx_click", { lock : true } );
 	PS.timerStart(6,update);//Make sure the computer moves
